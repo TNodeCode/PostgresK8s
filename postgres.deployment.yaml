@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      # Use a volume
+      volumes:
+        # Request the volume with the given claimName
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: db
+      containers:
+        - name: postgres
+          image: postgres:13-alpine
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: postgres-storage # has to be indentical to one of the volume names defined above
+              mountPath: /var/lib/postgres # map this directory in the container to the volume subPath
+              subPath: postgres # sub dir in the volume
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: postgressecret
+                  key: POSTGRES_DB
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgressecret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgressecret
+                  key: POSTGRES_PASSWORD
